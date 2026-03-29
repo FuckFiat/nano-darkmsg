@@ -1,0 +1,30 @@
+name: NanoDarkMsg
+options:
+  bundleIdPrefix: com.zerocool
+  deploymentTarget:
+    iOS: '16.0'
+  xcodeVersion: '15.0'
+
+settings:
+  base:
+    MARKETING_VERSION: 0.1.0
+    CURRENT_PROJECT_VERSION: 1
+
+targets:
+  NanoDarkMsg:
+    type: application
+    platform: iOS
+    sources:
+      - path: NanoDarkMsg
+    settings:
+      base:
+        PRODUCT_NAME: NANO DarkMsg
+        PRODUCT_BUNDLE_IDENTIFIER: com.zerocool.nanodarkmsg
+        INFOPLIST_FILE: NanoDarkMsg/Info.plist
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+        SWIFT_VERSION: '5.9'
+        GCC_OPTIMIZATION_LEVEL: '0'
+        ONLY_ACTIVE_ARCH: YES
+    dependencies: []
+    preBuildScripts: []
