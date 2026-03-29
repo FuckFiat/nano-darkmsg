@@ -4,51 +4,43 @@
 
 WORKDIR="/Users/zero_mini/.openclaw/workspace/nano-darkmsg/docs/images"
 COMFYUI="http://192.168.88.7:8188"
-NODE1="192.168.88.7"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Styles for variety
 STYLES=(
-    "cyberpunk city neon rain futuristic 8k detailed"
+    "cyberpunk city neon rain futuristic"
     "dark anime girl hacker cyberpunk aesthetic glowing eyes"
     "philosophical abstract digital consciousness neural network"
     "dark fantasy warrior glowing sword dramatic lighting"
     "sci-fi space station orbital view earth in background"
     "steampunk mechanical owl brass copper gears intricate"
     "synthwave retro sunset grid mountains vaporwave"
-    "dark oil painting dramatic portrait mysterious figure"
 )
 
 # Get random style
 STYLE="${STYLES[$((RANDOM % ${#STYLES[@]}))]}"
-
-# Full prompt
-PROMPT="masterpiece, best quality, highly detailed, $STYLE, illustration, artstation, concept art"
-
-# Negative prompt
-NEGATIVE="lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry"
+SEED=$((RANDOM * RANDOM))
 
 echo "🎨 Generating image..."
 echo "   Style: $STYLE"
+echo "   Seed: $SEED"
 
-# ComfyUI API payload
-PAYLOAD=$(cat <<EOF
-{
-    "prompt": "$PROMPT",
-    "negative_prompt": "$NEGATIVE",
-    "steps": 25,
-    "cfg_scale": 7,
-    "sampler_name": "euler_ancestral",
-    "width": 1024,
-    "height": 1024,
-    "seed": $RANDOM
-}
-EOF
-)
+# Read workflow template
+WORKFLOW_TEMPLATE=$(cat "$SCRIPT_DIR/comfyui_workflow.json")
+
+# Update workflow with dynamic values
+WORKFLOW_TEMPLATE=$(echo "$WORKFLOW_TEMPLATE" | sed "s/cyberpunk city neon rain futuristic/$STYLE/g")
+WORKFLOW_TEMPLATE=$(echo "$WORKFLOW_TEMPLATE" | sed "s/\"seed\": 42/\"seed\": $SEED/g")
+
+# Wrap in prompt format
+PAYLOAD="{\"prompt\": $WORKFLOW_TEMPLATE}"
 
 # Queue prompt
 RESULT=$(curl -s -X POST "$COMFYUI/prompt" \
     -H "Content-Type: application/json" \
     -d "$PAYLOAD")
+
+echo "   API Response: ${RESULT:0:200}..."
 
 if echo "$RESULT" | grep -q "prompt_id"; then
     PROMPT_ID=$(echo "$RESULT" | grep -o '"prompt_id":"[^"]*"' | cut -d'"' -f4)
@@ -57,20 +49,29 @@ if echo "$RESULT" | grep -q "prompt_id"; then
     # Wait for completion (poll)
     for i in {1..60}; do
         STATUS=$(curl -s "$COMFYUI/history/$PROMPT_ID" 2>/dev/null)
-        if echo "$STATUS" | grep -q "success"; then
+        if echo "$STATUS" | grep -q "\"$PROMPT_ID\""; then
             echo "✅ Completed!"
             
-            # Get output image
-            OUTPUT=$(echo "$STATUS" | grep -o '"output_image":"[^"]*"' | head -1 | cut -d'"' -f4)
+            # Extract image filename from history
+            IMAGE_DATA=$(echo "$STATUS" | grep -o '"images":\[[^]]*\]' | head -1)
+            FILENAME=$(echo "$IMAGE_DATA" | grep -o '"filename":"[^"]*"' | head -1 | cut -d'"' -f4)
+            SUBFOLDER=$(echo "$IMAGE_DATA" | grep -o '"subfolder":"[^"]*"' | head -1 | cut -d'"' -f4)
             
-            if [ -n "$OUTPUT" ]; then
+            if [ -n "$FILENAME" ]; then
                 # Download image
                 TIMESTAMP=$(date +%Y%m%d-%H%M)
-                curl -s "$COMFYUI/view/$OUTPUT" -o "$WORKDIR/nano_$TIMESTAMP.png"
-                echo "✅ Saved: nano_$TIMESTAMP.png"
+                if [ -n "$SUBFOLDER" ]; then
+                    curl -s "$COMFYUI/view?filename=$FILENAME&subfolder=$SUBFOLDER" -o "$WORKDIR/nano_$TIMESTAMP.png"
+                else
+                    curl -s "$COMFYUI/view?filename=$FILENAME" -o "$WORKDIR/nano_$TIMESTAMP.png"
+                fi
                 
-                # Generate description for Telegram post
-                python3 << PYEOF
+                if [ -f "$WORKDIR/nano_$TIMESTAMP.png" ] && [ -s "$WORKDIR/nano_$TIMESTAMP.png" ]; then
+                    echo "✅ Saved: nano_$TIMESTAMP.png"
+                    ls -lh "$WORKDIR/nano_$TIMESTAMP.png"
+                    
+                    # Generate description
+                    python3 << PYEOF
 import random
 descriptions = [
     "В цифровых глубинах сознания рождается новая реальность...",
@@ -82,10 +83,17 @@ descriptions = [
 ]
 print(random.choice(descriptions))
 PYEOF
-                
-                exit 0
+                    exit 0
+                else
+                    echo "❌ Download failed or empty file"
+                fi
+            else
+                echo "❌ No filename in response"
+                echo "$IMAGE_DATA"
             fi
+            break
         fi
+        echo "   Waiting... ($i/60)"
         sleep 2
     done
     
