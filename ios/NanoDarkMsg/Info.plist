@@ -44,5 +44,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	
+	<!-- Camera permission for QR scanner -->
+	<key>NSCameraUsageDescription</key>
+	<string>NANO DarkMsg needs camera access to scan QR codes for key exchange</string>
 </dict>
 </plist>

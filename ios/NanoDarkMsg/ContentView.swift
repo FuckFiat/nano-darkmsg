@@ -14,6 +14,10 @@ struct ContentView: View {
     @State private var encryptedText: String = ""
     @State private var isEncrypted: Bool = false
     @State private var showingShareSheet: Bool = false
+    @State private var showingQRScanner: Bool = false
+    @State private var showingQRCode: Bool = false
+    @State private var publicKeyQR: UIImage?
+    @State private var scannedKey: String = ""
     
     var body: some View {
         NavigationView {
@@ -63,6 +67,33 @@ struct ContentView: View {
                     }
                 }
                 
+                // Key exchange buttons
+                HStack(spacing: 15) {
+                    Button(action: { showingQRScanner = true }) {
+                        HStack {
+                            Image(systemName: "qrcode.viewfinder")
+                            Text("Scan Key")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.purple)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    
+                    Button(action: showMyQR) {
+                        HStack {
+                            Image(systemName: "qrcode")
+                            Text("My Key")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.indigo)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                }
+                
                 // Result
                 if !encryptedText.isEmpty {
                     TextEditor(text: $encryptedText)
@@ -91,45 +122,79 @@ struct ContentView: View {
             .navigationTitle("🌑 NANO DarkMsg")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: generateKeyPair) {
-                        Image(systemName: "key")
+                    Menu {
+                        Button(action: generateKeyPair) {
+                            Label("Generate Keys", systemImage: "key")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             }
             .sheet(isPresented: $showingShareSheet) {
                 ShareSheet(items: [encryptedText])
             }
+            .sheet(isPresented: $showingQRScanner) {
+                QRCodeScannerView(onCodeScanned: { code in
+                    scannedKey = code
+                    print("Scanned key: \(code)")
+                })
+            }
+            .sheet(isPresented: $showingQRCode) {
+                if let qrImage = publicKeyQR {
+                    VStack {
+                        Text("My Public Key")
+                            .font(.headline)
+                            .padding()
+                        Image(uiImage: qrImage)
+                            .interpolation(.none)
+                            .scaledToFit()
+                        Button("Done") {
+                            showingQRCode = false
+                        }
+                        .padding()
+                    }
+                }
+            }
         }
+    }
+    
+    func showMyQR() {
+        let crypto = CryptoManager.shared
+        let (_, publicKey) = crypto.generateKeyPair()
+        publicKeyQR = QRCodeGenerator.generateQRCode(from: publicKey.hexEncodedString())
+        showingQRCode = true
     }
     
     func encryptMessage() {
         guard !message.isEmpty, !password.isEmpty else { return }
         
-        // TODO: Implement AES-256-GCM encryption
-        // For now, simple base64 encoding as placeholder
-        if let data = message.data(using: .utf8) {
-            encryptedText = "NANO:ENCRYPTED:" + data.base64EncodedString()
+        do {
+            let crypto = CryptoManager.shared
+            encryptedText = try crypto.encrypt(plaintext: message, password: password)
             isEncrypted = true
+        } catch {
+            encryptedText = "❌ Error: \(error.localizedDescription)"
         }
     }
     
     func decryptMessage() {
         guard !encryptedText.isEmpty, !password.isEmpty else { return }
         
-        // TODO: Implement AES-256-GCM decryption
-        if encryptedText.hasPrefix("NANO:ENCRYPTED:") {
-            let base64String = encryptedText.replacingOccurrences(of: "NANO:ENCRYPTED:", with: "")
-            if let data = Data(base64Encoded: base64String),
-               let decrypted = String(data: data, encoding: .utf8) {
-                message = decrypted
-                isEncrypted = false
-            }
+        do {
+            let crypto = CryptoManager.shared
+            message = try crypto.decrypt(ciphertext: encryptedText, password: password)
+            isEncrypted = false
+        } catch {
+            message = "❌ Error: \(error.localizedDescription)"
         }
     }
     
     func generateKeyPair() {
-        // TODO: Generate X25519 keypair for key exchange
-        print("Generate keypair tapped")
+        let crypto = CryptoManager.shared
+        let (privateKey, publicKey) = crypto.generateKeyPair()
+        print("🔑 Private Key: \(privateKey.hexEncodedString())")
+        print("🔑 Public Key: \(publicKey.hexEncodedString())")
     }
 }
 
