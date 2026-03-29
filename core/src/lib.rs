@@ -6,20 +6,22 @@
 //! - Ed25519 signatures
 //! - Argon2 key derivation
 
+pub mod key_exchange;
+
 use aes_gcm::{
-    aead::{Aead, KeyInit, OsRng},
+    aead::{Aead, KeyInit},
     Aes256Gcm, Nonce,
 };
 use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
 use base64::{engine::general_purpose, Engine as _};
-use rand::rngs::OsRng;
-use x25519_dalek::{EphemeralSecret, PublicKey, SharedSecret};
+use rand::{rngs::OsRng, Rng};
+use x25519_dalek::{EphemeralSecret, PublicKey};
 
 /// Encrypt message with AES-256-GCM
-pub fn encrypt(plaintext: &str, key: &[u8]) -> Result<String, Box<dyn std::error::Error>> {
-    let cipher = Aes256Gcm::new_from_slice(key)?;
+pub fn encrypt(plaintext: &str, key: &[u8]) -> Result<String, anyhow::Error> {
+    let cipher = Aes256Gcm::new_from_slice(key).map_err(|e| anyhow::anyhow!("Key error: {}", e))?;
     let nonce = Nonce::from(OsRng.gen::<[u8; 12]>());
-    let ciphertext = cipher.encrypt(&nonce, plaintext.as_bytes())?;
+    let ciphertext = cipher.encrypt(&nonce, plaintext.as_bytes()).map_err(|e| anyhow::anyhow!("Encrypt failed: {}", e))?;
     
     // Encode nonce + ciphertext in base64
     let mut combined = nonce.to_vec();
@@ -28,36 +30,21 @@ pub fn encrypt(plaintext: &str, key: &[u8]) -> Result<String, Box<dyn std::error
 }
 
 /// Decrypt message with AES-256-GCM
-pub fn decrypt(ciphertext_b64: &str, key: &[u8]) -> Result<String, Box<dyn std::error::Error>> {
-    let combined = general_purpose::STANDARD.decode(ciphertext_b64)?;
+pub fn decrypt(ciphertext_b64: &str, key: &[u8]) -> Result<String, anyhow::Error> {
+    let combined = general_purpose::STANDARD.decode(ciphertext_b64).map_err(|e| anyhow::anyhow!("Decode failed: {}", e))?;
     let nonce = Nonce::from_slice(&combined[..12]);
     let ciphertext = &combined[12..];
     
-    let cipher = Aes256Gcm::new_from_slice(key)?;
-    let plaintext = cipher.decrypt(nonce, ciphertext)?;
-    Ok(String::from_utf8(plaintext)?)
-}
-
-/// Generate X25519 keypair for key exchange
-pub fn generate_keypair() -> (EphemeralSecret, PublicKey) {
-    let secret = EphemeralSecret::random(OsRng);
-    let public = PublicKey::from(&secret);
-    (secret, public)
-}
-
-/// Derive shared secret from X25519 key exchange
-pub fn derive_shared_secret(
-    our_secret: &EphemeralSecret,
-    their_public: &PublicKey,
-) -> SharedSecret {
-    our_secret.diffie_hellman(their_public)
+    let cipher = Aes256Gcm::new_from_slice(key).map_err(|e| anyhow::anyhow!("Key error: {}", e))?;
+    let plaintext = cipher.decrypt(nonce, ciphertext).map_err(|e| anyhow::anyhow!("Decrypt failed: {}", e))?;
+    Ok(String::from_utf8(plaintext).map_err(|e| anyhow::anyhow!("UTF8 error: {}", e))?)
 }
 
 /// Derive encryption key from password using Argon2
-pub fn derive_key_from_password(password: &str, salt: &str) -> Result<[u8; 32], Box<dyn std::error::Error>> {
+pub fn derive_key_from_password(password: &str, salt: &str) -> Result<[u8; 32], anyhow::Error> {
     let argon2 = Argon2::default();
-    let salt = SaltString::from_b64(salt)?;
-    let hash = argon2.hash_password(password.as_bytes(), &salt)?;
+    let salt = SaltString::from_b64(salt).map_err(|e| anyhow::anyhow!("Invalid salt: {}", e))?;
+    let hash = argon2.hash_password(password.as_bytes(), &salt).map_err(|e| anyhow::anyhow!("Hash failed: {}", e))?;
     
     // Take first 32 bytes of hash
     let mut key = [0u8; 32];
@@ -80,16 +67,5 @@ mod tests {
         let decrypted = decrypt(&encrypted, &key).unwrap();
         
         assert_eq!(message, decrypted);
-    }
-
-    #[test]
-    fn test_key_exchange() {
-        let (alice_secret, alice_public) = generate_keypair();
-        let (bob_secret, bob_public) = generate_keypair();
-        
-        let alice_shared = derive_shared_secret(&alice_secret, &bob_public);
-        let bob_shared = derive_shared_secret(&bob_secret, &alice_public);
-        
-        assert_eq!(alice_shared.as_bytes(), bob_shared.as_bytes());
     }
 }

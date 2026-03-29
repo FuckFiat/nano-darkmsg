@@ -1,0 +1,14 @@
+/Users/zero_mini/.openclaw/workspace/nano-darkmsg/core/target/debug/deps/serde-6bd66cb281aea784.d: /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/zero_mini/.openclaw/workspace/nano-darkmsg/core/target/debug/build/serde-f7820387e22cc7ff/out/private.rs
+
+/Users/zero_mini/.openclaw/workspace/nano-darkmsg/core/target/debug/deps/libserde-6bd66cb281aea784.rlib: /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/zero_mini/.openclaw/workspace/nano-darkmsg/core/target/debug/build/serde-f7820387e22cc7ff/out/private.rs
+
+/Users/zero_mini/.openclaw/workspace/nano-darkmsg/core/target/debug/deps/libserde-6bd66cb281aea784.rmeta: /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/zero_mini/.openclaw/workspace/nano-darkmsg/core/target/debug/build/serde-f7820387e22cc7ff/out/private.rs
+
+/Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/Users/zero_mini/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/Users/zero_mini/.openclaw/workspace/nano-darkmsg/core/target/debug/build/serde-f7820387e22cc7ff/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/zero_mini/.openclaw/workspace/nano-darkmsg/core/target/debug/build/serde-f7820387e22cc7ff/out
